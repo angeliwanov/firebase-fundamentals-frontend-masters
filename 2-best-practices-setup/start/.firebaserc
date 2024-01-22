@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "frontend-masters-firebase"
-  }
+    "default": "start-project-48015",
+    "start-project": "start-project-48015"
+  },
+  "targets": {},
+  "etags": {}
 }
