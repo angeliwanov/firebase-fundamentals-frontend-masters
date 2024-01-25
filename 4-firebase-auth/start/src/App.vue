@@ -12,49 +12,65 @@ import {
   linkWithRedirect,
   signOut,
   signInWithEmailAndPassword,
+  confirmPasswordReset,
 } from "firebase/auth";
-import { getDocs, collection, query, where } from 'firebase/firestore';
+import { getDocs, collection, query, where } from "firebase/firestore";
 
-const { auth } = getFirebase();
+const { auth, firestore } = getFirebase();
 const state = reactive({ expenses: [] });
 
 function getFormDetails(event) {
   const formData = new FormData(event.target);
   const email = formData.get("email");
-  const password = formData.get("password");  
+  const password = formData.get("password");
   return { email, password };
 }
 
 async function signIn(event) {
   event.preventDefault();
   const { email, password } = getFormDetails(event);
-
+  signInWithEmailAndPassword(auth, email, password);
 }
 
 async function createAccount(event) {
   event.preventDefault();
-  const { email, password } = getFormDetails(event);  
-
+  const { email, password } = getFormDetails(event);
+  createUserWithEmailAndPassword(auth, email, password);
 }
 
 function linkWithGoogle() {
+  linkWithRedirect(auth.currentUser, new GoogleAuthProvider());
 }
 
 function signInGoogle() {
-
+  signInWithRedirect(auth, new GoogleAuthProvider());
 }
 
 function signUserOut() {
-
+  signOut(auth);
 }
 
 onMounted(async () => {
   // Get the user's expenses
+  try {
+    getRedirectResult(auth);
+  } catch (error) {}
+
+  onAuthStateChanged(auth, async (user) => {
+    state.user = user;
+
+    const userQuery = query(
+      collection(firestore, "expenses"),
+      where("uid", "==", user.uid)
+    );
+
+    const snapshot = await getDocs(userQuery);
+    console.log(snapshot.docs);
+    state.expenses = snapshot.docs.map((doc) => ({ text: doc.data().cost }));
+  });
 });
 
-onBeforeUnmount(() => {
-
-});
+onBeforeUnmount(() => {});
 </script>
 
 <template>
@@ -106,7 +122,6 @@ onBeforeUnmount(() => {
         </li>
       </ol>
     </div>
-
   </main>
 </template>
 
